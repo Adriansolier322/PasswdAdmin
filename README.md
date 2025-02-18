@@ -1,7 +1,7 @@
 # PasswdAdmin
 
 A simple password administrator. 
-![Logo](img/passwdAdmin-logo.png)
+![Logo](img/passwdAdmin_logo.png)
 
 
 ## Some Information

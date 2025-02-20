@@ -1,5 +1,5 @@
 # Author: Adrián Fernández Álvarez
-# Version: 0.2.0
+# Version: 0.2.1
 
 # Cryptography
 from Cryptodome.Hash import MD5, SHA256
@@ -61,16 +61,19 @@ def hash(txt, mode='MD5', save=False):
 # Funcion para cifrar el texto
 def cif_txt(txt, user_id=0, is_role=False):
     if is_role:
-        pass
+        key = read_key(db_key_name='roles', id=user_id, RSA_mode=True)
     else:
-        key = read_key(db_key=True, user_id=user_id, RSA_mode=True)
+        key = read_key(db_key_name='pub_keys', id=user_id, RSA_mode=True)
     cipher = PKCS1_OAEP.new(key)
     txt_cif = cipher.encrypt(txt.encode())
     return base64.b64encode(txt_cif).decode('utf-8')
 
 # Función para descifrar el texto
-def descif_txt(txt_cif):
-    key = read_key(path='.cache/user_priv.key', RSA_mode=True)
+def descif_txt(txt_cif, user_name='', is_role=False):
+    if is_role:
+        pass
+    else:
+        key = read_key(path=f'.cache/keys/{user_name}_priv.key', RSA_mode=True)
     txt_cif = base64.b64decode(txt_cif)
     cipher = PKCS1_OAEP.new(key)
     txt_descif = cipher.decrypt(txt_cif)
@@ -80,25 +83,30 @@ def descif_txt(txt_cif):
 #----------------------------------------------Others----------------------------------------------
 
 # Función para generar y guardar la clave en un archivo
-def generate_key(user_id, user_name='user'):
-    key_directory = askdirectory(title='Selecione la carpeta donde se guardaran las keys')
+def generate_key(user_id=0, user_name='user', key_directory='', role_name=''):
     random = Cryptodome.Random.new().read
     priv_key = RSA.generate(1024, random)
     pub_key = priv_key.publickey()
     priv_key = priv_key.exportKey(format='DER')
     pub_key = pub_key.exportKey(format='DER')
 
-    open(f'{key_directory}/{user_name}_priv.key', 'wb').write(base64.b64encode(priv_key))
     db = sqlite3.connect('.storage/users.db')
-    db.execute("insert into pub_keys(id,pub_key,priv_key) values (?,?,?)", (user_id,base64.b64encode(pub_key),hash(base64.b64encode(priv_key))))
+    if key_directory=='':
+        key_directory = askdirectory(title='Selecione la carpeta donde se guardaran las keys')
+        open(f'{key_directory}/{user_name}_priv.key', 'wb').write(base64.b64encode(priv_key))
+        db.execute("insert into pub_keys(id,pub_key,priv_key) values (?,?,?)", (user_id,base64.b64encode(pub_key),hash(base64.b64encode(priv_key))))
+    else:
+        open(f'{key_directory}/{role_name}_priv.key', 'wb').write(base64.b64encode(priv_key))
+        db.execute("insert into roles(role_name,pub_key,priv_key) values (?,?,?)", (role_name,base64.b64encode(pub_key),hash(base64.b64encode(priv_key))))
     db.commit()
     db.close()
-    return key_directory + f'/{user_name}_priv.key'
+    return key_directory
+
 #Funcion para leer la key de encriptacion
-def read_key(user_id=0, path='.cache/user_priv.key', db_key=False, RSA_mode=False):
-    if db_key:
+def read_key(id=0, path='.cache/user_priv.key', db_key_name='', RSA_mode=False):
+    if db_key_name!='':
         db = sqlite3.connect('.storage/users.db')
-        data = db.execute('select pub_key from pub_keys where id=?', (user_id, )).fetchone()
+        data = db.execute(f'select pub_key from {db_key_name} where id=?', (id, )).fetchone()
         data = data[0]
         db.close()
     else:
@@ -141,7 +149,7 @@ def random_passwd(long=20, save=False):
 
 #Funcion para registrar usuarios en la DB, por defecto pedira al usuario su informacion de registro pero tambien tenemos la opcion de registrar usuarios manualmente desde el propio codigo
 def register_user(user_name='', passwd='', priv_key='', autocomplete=True):
-    try:
+    #try:
         if autocomplete:
             db = sqlite3.connect('.storage/users.db')
             os.system('cls')
@@ -164,25 +172,34 @@ def register_user(user_name='', passwd='', priv_key='', autocomplete=True):
                         print('\n Las contraseñas no coinciden')
                         continue
                     else: break
+                
                 try:
                     user_id = db.execute("select id from users ORDER BY id DESC LIMIT 1").fetchone()
                     user_id = user_id[0]
                     user_id+=1
+                    
                 except:
                     user_id=1
+                    
                 print(' Se va a generar una key de encriptacion para su registro, no la pierda')
                 print(' Su key se encuentra en: ', end='')
                 key_directory = generate_key(user_id=user_id, user_name=user_name)
                 print(key_directory)
+                if user_id==1:
+                    generate_key(key_directory=key_directory, role_name='admin')
+                    role=1
+                else:
+                    generate_key(key_directory=key_directory, role_name='ninguno')
+                    role=2
                 break
     
                 
             its_ok = input(' La informacion proporcionada es correcta? (y/n): ').lower()
             if its_ok == 'y' or its_ok == 's' or its_ok == 'yes' or its_ok == 'si':
                 passwd = hash(passwd)
-                priv_key = hash(read_key(path=key_directory), mode='SHA256')
+                priv_key = hash(read_key(path=f'{key_directory}/{user_name}_priv.key'), mode='SHA256')
                 # Registra al usuario en la DB
-                db.execute("insert into users(user_name,passwd,cryp_key,keys_directory) values (?,?,?,?)", (user_name,passwd,priv_key,key_directory))
+                db.execute("insert into users(user_name,passwd,priv_key,keys_directory,role) values (?,?,?,?,?)", (user_name,passwd,priv_key,key_directory,role))
                 db.commit()
                 db.close()
                 print('\n Usuario registrado correctamente')
@@ -195,9 +212,9 @@ def register_user(user_name='', passwd='', priv_key='', autocomplete=True):
                 time.sleep(2)
 
         
-    except: 
-        print('\n Algo a salido mal al registrar el usuario')
-        time.sleep(2)
+    #except: 
+    #    print('\n Algo a salido mal al registrar el usuario')
+    #    time.sleep(2)
 
 
 
@@ -206,24 +223,41 @@ def create_DB():
     db = sqlite3.connect('.storage/users.db')
     try:
         #Creamos la base de datos con los campos necesarios
+        # Tabla usuarios
         db.execute("""create table if not exists users (
                             id integer primary key autoincrement,
                             user_name text not null,
                             passwd txt not null,
-                            cryp_key txt not null,
-                            keys_directory txt not null)""")
+                            priv_key txt not null,
+                            keys_directory txt not null,
+                            role txt not null,
+                            foreign key (role) references roles (id))""")
+        # Tabla roles
+        db.execute("""create table if not exists roles (
+                            id integer primary key autoincrement,
+                            role_name txt not null,
+                            pub_key txt not null,
+                            priv_key txt not null)""")
+        # Tabla contraseñas privadas
         db.execute("""create table if not exists priv_passwd (
-                            id integer,
+                            id integer not null,
                             desc txt not null,
                             passwd txt not null,
                             foreign key (id) references users (id))""")
+        # Tabla contraseñas publicas
+        db.execute("""create table if not exists pub_passwd (
+                            desc txt not null,
+                            passwd txt not null,
+                            role integer not  null,
+                            foreign key (role) references roles (id))""")
+        # Tabla keys publicas
         db.execute("""create table if not exists pub_keys (
                             id integer,
                             pub_key txt not null,
                             priv_key txt not null,
                             foreign key (id) references users (id))""")
+        
     except sqlite3.OperationalError:
-        db.close()
         print(' Ya existe una base de datos')            
     db.close()
     register_user()
@@ -239,7 +273,7 @@ def login(trys=3):
                 create_DB()
                 menu_start()
         else:
-            global user_name, cryp_key
+            global user_name, priv_key
             os.system('cls')
             print(' Inicio de sesion:')
             print(f' Tienes {trys} intentos antes de que se cierre el programa\n')
@@ -251,10 +285,10 @@ def login(trys=3):
             user_name = str(input(' Nombre de usuario: '))
             passwd = str(getpass(' Contraseña: '))
             print(f' Seleccione su key de encriptación: ', end='')
-            cryp_key = askopenfilename(title='Seleccione su key de encriptación')
-            print(cryp_key)
+            priv_key = askopenfilename(title='Seleccione su key de encriptación')
+            print(priv_key)
 
-            data = db.execute('select * from users where user_name=? AND passwd=? AND cryp_key=?', (user_name, hash(passwd), hash(read_key(path=cryp_key), mode='SHA256'))).fetchone()
+            data = db.execute('select * from users where user_name=? AND passwd=? AND priv_key=?', (user_name, hash(passwd), hash(read_key(path=priv_key), mode='SHA256'))).fetchone()
             if data==None:
                 print(' La informacion proporcionada es incorrecta')
                 trys-=1
@@ -263,7 +297,8 @@ def login(trys=3):
             else:
                 print(' Login exitoso')
                 try:
-                    shutil.copyfile(cryp_key, '.cache/user_priv.key')
+                    keys_directory = data[4]
+                    shutil.copytree(keys_directory, '.cache/keys')
                 except: pass
                 time.sleep(2)
                 if data[0]==1:
@@ -276,7 +311,8 @@ def login(trys=3):
         create_DB()
 
 #----------------------------------------------PASSWD----------------------------------------------
-def save_passwd(passwd=''):
+# Guarda la contraseña privada en la base de datos, preguntando la descripcion
+def save_passwd(passwd='', role=['admin'], is_pub_passwd=False):
     db = sqlite3.connect('.storage/users.db')
     os.system('cls')
     print(' Guardado de contraseña: ')
@@ -284,8 +320,26 @@ def save_passwd(passwd=''):
     user_id = user_id[0]
     while True:
         desc = str(input(' Introduzca la descripcion de la contraseña (ej: Contraseña de twt): ')).lower()
+        if is_pub_passwd:
+            data = db.execute('select desc from pub_passwd where desc=?', (desc, )).fetchone()
+            if data==None:
+                pass
+            else:
+                data = data[0]
+        else:
+            data = db.execute('select desc from priv_passwd where desc=?', (desc, )).fetchone()
+            if data==None:
+                pass
+            else:
+                data = data[0]
         if desc=='exit':
-            print('La descripcion de la contraseña no puede ser "exit"')
+            print(' La descripcion de la contraseña no puede ser "exit"')
+            continue
+        elif desc==data:
+            print(' Ya existe una contraseña con esa descripcion, porfavor use otra')
+            continue
+        elif len(desc)>100:
+            print(' La descripcion no puede tener mas de 100 caracteres') 
             continue
         else:
             if passwd=='':
@@ -293,20 +347,31 @@ def save_passwd(passwd=''):
                 if its_ok == 'y' or its_ok == 's' or its_ok == 'yes' or its_ok == 'si':
                     passwd = random_passwd(30)
                 else: 
-                    passwd = str(input(' Introduce la contraseña que deseas guardar: '))
+                    while True:
+                        passwd = str(input(' Introduce la contraseña que deseas guardar: '))
+                        if len(passwd)>100:
+                            print('  La contraseña no puede tener mas de 100 caracteres')
+                            continue
+                        else: break
             else:
                 print(f' Introduce la contraseña que deseas guardar: {passwd}')
             
-            passwd = cif_txt(passwd, user_id)
+            if is_pub_passwd:
+                passwd = cif_txt(passwd, user_id)
+            else:
+                passwd = cif_txt(passwd, user_id)
 
             its_ok = input('\n Estas seguro de que deseas guardar esta contraseña? (y/n): ').lower()
             if its_ok == 'y' or its_ok == 's' or its_ok == 'yes' or its_ok == 'si':
-                db.execute("insert into priv_passwd(id,desc,passwd) values (?,?,?)", (user_id, desc, passwd))
-                db.commit()
-                db.close()
-                print('\n Contraseña guardada correctamente')
-                time.sleep(2)
-                break
+                if is_pub_passwd:
+                    db.execute("insert into pub_passwd(desc,passwd,role) values (?,?,?)", (user_id, desc, role))
+                else:
+                    db.execute("insert into priv_passwd(id,desc,passwd) values (?,?,?)", (user_id, desc, passwd))
+                    db.commit()
+                    db.close()
+                    print('\n Contraseña guardada correctamente')
+                    time.sleep(2)
+                    break
             elif its_ok == 'n' or its_ok == 'no' or its_ok == 'nou' or its_ok == '':
                 print(' OK :)')
                 break
@@ -315,8 +380,9 @@ def save_passwd(passwd=''):
                 continue
 
     
-
+# Muestra las contraseñas almacenadas en la base de datos y si delete=True le preguntara al usuario que contraseña desea eliminar y eliminara la que elija el usuario
 def view_passwd(delete=False):
+    global user_name
     db = sqlite3.connect('.storage/users.db')
     os.system('cls')
     print(' Tus contraseñas almacenadas son: \n')
@@ -324,7 +390,7 @@ def view_passwd(delete=False):
     user_id = user_id[0]
     data = db.execute('select desc,passwd from priv_passwd where id=?', (user_id, ))
     for fila in data:
-        print(f' Descripcion: {fila[0]} | Contraseña: {descif_txt(fila[1])}\n')
+        print(f' Descripcion: {fila[0]} | Contraseña: {descif_txt(fila[1], user_name)}\n')
     
     if delete:
         print('-------------------------------------------------------------------------------------------------------')
@@ -340,7 +406,7 @@ def view_passwd(delete=False):
                 print(' La contraseña que se va a eliminar es la siguiente: \n')
                 
                 delete_passwd = db.execute('select desc,passwd from priv_passwd where desc=?', (answer, )).fetchone()
-                print(f' Descripcion: {delete_passwd[0]} | Contraseña: {descif_txt(delete_passwd[1])}\n')
+                print(f' Descripcion: {delete_passwd[0]} | Contraseña: {descif_txt(delete_passwd[1], user_name)}\n')
 
                 its_ok = input('\n Estas seguro? (y/n): ').lower()
                 if its_ok == 'y' or its_ok == 's' or its_ok == 'yes' or its_ok == 'si':
@@ -413,7 +479,7 @@ def change_theme():
         file.close()
 
 def menu_admin():
-    global user_name, cryp_key
+    global user_name, priv_key
     while True:
         os.system('cls')
         print(f' Usuario: {user_name}                         Sesion: {datetime.date.today()}\n')
@@ -476,7 +542,7 @@ def menu_admin():
     menu_admin()
 
 def menu_user():
-    global user_name, cryp_key
+    global user_name, priv_key
     while True:
         os.system('cls')
         print(f' Usuario: {user_name}                         Sesion: {datetime.date.today()}\n')

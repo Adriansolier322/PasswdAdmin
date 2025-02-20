@@ -21,3 +21,6 @@ The main dependence is python3 and Pycryptodomex, to install the last one run:
 ```bash
   pip install pycryptodomex
 ```
+## How to run
+To run it normally, execute the program `PasswdAdmin-start.bat` because it is a program that detects if you have all the necessary dependencies for the correct execution.
+If you are sure that you have all the dependencies run `PasswdAdmin.py` directly

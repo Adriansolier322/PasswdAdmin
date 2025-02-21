@@ -73,12 +73,16 @@ def descif_txt(txt_cif, user_name='', is_role=False):
     if is_role:
         pass
     else:
-        key = read_key(path=f'.cache/keys/{user_name}_priv.key', RSA_mode=True)
+        key = read_key(path=f'.cache/keys/{user_name}_priv.keypa', RSA_mode=True)
     txt_cif = base64.b64decode(txt_cif)
     cipher = PKCS1_OAEP.new(key)
     txt_descif = cipher.decrypt(txt_cif)
     return txt_descif.decode('utf-8')
 
+def search_keys():
+    os.system('cls')
+    path_act = os.getcwd()
+    os.system(f'cd C:/ & dir /b/s *.keypa > {path_act}/.cache/found_keys')
 
 #----------------------------------------------Others----------------------------------------------
 
@@ -93,17 +97,17 @@ def generate_key(user_id=0, user_name='user', key_directory='', role_name=''):
     db = sqlite3.connect('.storage/users.db')
     if key_directory=='':
         key_directory = askdirectory(title='Selecione la carpeta donde se guardaran las keys')
-        open(f'{key_directory}/{user_name}_priv.key', 'wb').write(base64.b64encode(priv_key))
+        open(f'{key_directory}/{user_name}_priv.keypa', 'wb').write(base64.b64encode(priv_key))
         db.execute("insert into pub_keys(id,pub_key,priv_key) values (?,?,?)", (user_id,base64.b64encode(pub_key),hash(base64.b64encode(priv_key))))
     else:
-        open(f'{key_directory}/{role_name}_priv.key', 'wb').write(base64.b64encode(priv_key))
+        open(f'{key_directory}/{role_name}_priv.keypa', 'wb').write(base64.b64encode(priv_key))
         db.execute("insert into roles(role_name,pub_key,priv_key) values (?,?,?)", (role_name,base64.b64encode(pub_key),hash(base64.b64encode(priv_key))))
     db.commit()
     db.close()
     return key_directory
 
 #Funcion para leer la key de encriptacion
-def read_key(id=0, path='.cache/user_priv.key', db_key_name='', RSA_mode=False):
+def read_key(id=0, path='.cache/user_priv.keypa', db_key_name='', RSA_mode=False):
     if db_key_name!='':
         db = sqlite3.connect('.storage/users.db')
         data = db.execute(f'select pub_key from {db_key_name} where id=?', (id, )).fetchone()
@@ -197,7 +201,7 @@ def register_user(user_name='', passwd='', priv_key='', autocomplete=True):
             its_ok = input(' La informacion proporcionada es correcta? (y/n): ').lower()
             if its_ok == 'y' or its_ok == 's' or its_ok == 'yes' or its_ok == 'si':
                 passwd = hash(passwd)
-                priv_key = hash(read_key(path=f'{key_directory}/{user_name}_priv.key'), mode='SHA256')
+                priv_key = hash(read_key(path=f'{key_directory}/{user_name}_priv.keypa'), mode='SHA256')
                 # Registra al usuario en la DB
                 db.execute("insert into users(user_name,passwd,priv_key,keys_directory,role) values (?,?,?,?,?)", (user_name,passwd,priv_key,key_directory,role))
                 db.commit()
@@ -273,7 +277,7 @@ def login(trys=3):
                 create_DB()
                 menu_start()
         else:
-            global user_name, priv_key
+            global user_name, priv_key, role
             os.system('cls')
             print(' Inicio de sesion:')
             print(f' Tienes {trys} intentos antes de que se cierre el programa\n')
@@ -296,6 +300,9 @@ def login(trys=3):
                 login(trys=trys)
             else:
                 print(' Login exitoso')
+                role_id = data[5]
+                role = db.execute('select role_name from roles where id=?', (role_id, )).fetchone()
+                role = role[0]
                 try:
                     keys_directory = data[4]
                     shutil.copytree(keys_directory, '.cache/keys')
@@ -479,10 +486,10 @@ def change_theme():
         file.close()
 
 def menu_admin():
-    global user_name, priv_key
+    global user_name, priv_key, role
     while True:
         os.system('cls')
-        print(f' Usuario: {user_name}                         Sesion: {datetime.date.today()}\n')
+        print(f' Usuario: {user_name} | Rol: {role}                      Sesion: {datetime.date.today()}\n')
         print(' Opciones: ')
         print(f'''
             [+] 1. Guardar una nueva contraseña
@@ -542,10 +549,10 @@ def menu_admin():
     menu_admin()
 
 def menu_user():
-    global user_name, priv_key
+    global user_name, priv_key, role
     while True:
         os.system('cls')
-        print(f' Usuario: {user_name}                         Sesion: {datetime.date.today()}\n')
+        print(f' Usuario: {user_name} | Rol:{role}                         Sesion: {datetime.date.today()}\n')
         print(' Opciones: ')
         print(f'''
             [+] 1. Guardar una nueva contraseña
@@ -608,8 +615,7 @@ def menu_start():
         os.system('attrib +h .storage')
     except: pass
     while True:
-        os.system('cls')
-        os.system('title PasswdAdmin - Powered by Rubio')
+        os.system('cls & title PasswdAdmin - Powered by Rubio & mode con: cols=110 lines=25')
         print('\n Opciones: ')
         print(f'''
             [+] 1. Inicio de sesion
@@ -632,6 +638,8 @@ def menu_start():
     elif option==3:
         print(' Bye :)')
         time.sleep(0.5)
+        os.system('cls & color')
+        
         exit()
     elif option==0:
         change_theme()
@@ -648,4 +656,4 @@ if  __name__=='__main__':
     except FileNotFoundError: pass
     os.system(f'color {theme_code}')
     menu_start()
-    
+   

@@ -82,7 +82,19 @@ def descif_txt(txt_cif, user_name='', is_role=False):
 def search_keys():
     os.system('cls')
     path_act = os.getcwd()
-    os.system(f'cd C:/ & dir /b/s *.keypa > {path_act}/.cache/found_keys')
+    print('Buscando Keys...\n')
+    os.system(f'cd C:/ & dir /b/s *.keypa > {path_act}/.cache/found_keys 2>&1 & cd {path_act}')
+    os.system(f'D: & dir /b/s *.keypa >> {path_act}/.cache/found_keys 2>&1 & cd {path_act}')
+    os.system(f'E: & dir /b/s *.keypa >> {path_act}/.cache/found_keys 2>&1 & cd {path_act}')
+    data = open('.cache/found_keys', 'r').readlines()
+    os.remove('.cache/found_keys')
+    for line in data:
+        if line=='No se encuentra el archivo\n':
+            continue
+        else:
+            open('.cache/found_keys', 'a').write(line)
+            print(line, end='')
+
 
 #----------------------------------------------Others----------------------------------------------
 

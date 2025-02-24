@@ -25,5 +25,10 @@ The main dependence is python3 and Pycryptodomex, to install the last one run:
 
 ### Client side
 You only need to execute `client_side_run.bat` on a windows
-### Server side
+### Server side on windows
 You only need to execute `server_side_run.bat` on a windows
+### Server side on linux
+You need to have installed Python3 and execute the comand:
+```bash
+  python3 PasswdAdmin_server.pyw &
+```

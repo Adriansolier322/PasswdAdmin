@@ -7,7 +7,7 @@ A simple password administrator.
 ## Some Information
 - Title: `PasswdAdmin`
 - Author: [@Adriansolier322](https://www.github.com/Adriansolier322)
-- Version: `0.3.0`
+- Version: `0.3.1`
 
 
 ### Installation

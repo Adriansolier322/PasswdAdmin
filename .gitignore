@@ -1,5 +1,8 @@
 /.cache
 /.storage
+/app/client/.cache
+/app/client/.storage
+/app/server/.storage
 /img/ignore
 /pruebas
 /keys

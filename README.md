@@ -5,6 +5,7 @@ A simple password administrator.
 
 
 ## Some Information
+🇪🇸 [Spanish](README_spanish.md)
 - Title: `PasswdAdmin`
 - Author: [@Adriansolier322](https://www.github.com/Adriansolier322)
 - Version: `0.3.1`
@@ -12,7 +13,7 @@ A simple password administrator.
 
 ### Installation
 
-To install the project with git run:
+To download the project with git run:
 ```bash
   git clone https://github.com/Adriansolier322/PasswdAdmin.git
 ```

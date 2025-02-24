@@ -1,5 +1,4 @@
 # Author: Adrián Fernández Álvarez
-# Version: 0.3.0
 
 # Cryptography
 from Cryptodome.Hash import MD5, SHA256

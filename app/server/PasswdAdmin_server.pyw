@@ -1,5 +1,4 @@
 # Author: Adrián Fernández Álvarez
-# Version: 0.3.0
 
 import socket
 import threading

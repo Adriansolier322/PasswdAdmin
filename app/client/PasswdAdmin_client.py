@@ -184,23 +184,16 @@ def conf_server(check=False, complete=False):
         while True:
             os.system('cls')
             print(' 🛜 Configuracion de servidor remoto:\n')
-            ip = str(input(' Introduzca la ip o direccion del servidor remoto: '))
+            SERVER_IP = str(input(' Introduzca la ip o direccion del servidor remoto: '))
 
             try:
                 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                client_socket.connect((ip, PORT))
+                client_socket.connect((SERVER_IP, PORT))
                 print(' ✅ Conexion exitosa')
                 with open(".storage/server_ip.dat", "w") as f:
-                    f.write(ip)
+                    f.write(SERVER_IP)
                 time.sleep(2)
-                its_ok = input(' Deseas descargar la base de datos del seridor? (y/n): ').lower()
-                if its_ok == 'y' or its_ok == 's' or its_ok == 'yes' or its_ok == 'si':
-                    download_db()
-                else: 
-                    print(' Se descargara automaticamente al reiniciar el programa')
-                    time.sleep(2)
-                break
-                        
+                download_db()
             except Exception as e:
                 print(f" ❌ El servidor no responde: {e}")
                 its_ok = input(' Deseas volver a intentarlo? (y/n): ').lower()

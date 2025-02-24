@@ -76,7 +76,10 @@ def start_server():
 if __name__ == "__main__":
     try:
         os.mkdir('.storage')
-        os.system('attrib +h .storage')
+        if os.name=='nt':
+            os.system('attrib +h .storage')
     except FileExistsError: pass
     finally:
+        if os.name=='nt':
+            os.system("title PasswdAdmin (server) - Powered by Rubio")
         start_server()

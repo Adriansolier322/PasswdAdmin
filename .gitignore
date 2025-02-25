@@ -1,7 +1,7 @@
 /.cache
 /.storage
-/app/client/.cache
-/app/client/.storage
+/app/client/code/.cache
+/app/client/code/.storage
 /app/server/.storage
 /img/ignore
 /pruebas

@@ -8,7 +8,7 @@ Un simple administrador de contraseñas.
 🇪n [English](README.md)
 - Titulo: `PasswdAdmin`
 - Autor: [@Adriansolier322](https://www.github.com/Adriansolier322)
-- Version: `0.3.1`
+- Version: `0.3.2`
 
 
 ### Instalacion

@@ -20,7 +20,6 @@ from getpass import getpass
 import os, shutil
 import time, datetime, string, random
 import sqlite3
-import threading
 
 #----------------------------------------------Encryption----------------------------------------------
 

@@ -20,6 +20,7 @@ from getpass import getpass
 import os, shutil
 import time, datetime, string, random
 import sqlite3
+import threading
 
 #----------------------------------------------Encryption----------------------------------------------
 
@@ -119,9 +120,8 @@ def read_key(id=0, path='.cache/user_priv.keypa', db_key_name='', RSA_mode=False
         
 #----------------------------------------------SERVER----------------------------------------------
 
-
-def download_db():
-    print(" 📡 Descargando base de datos al servidor (no cierre el programa)...")
+def download_db(overvose=True):
+    if overvose: print(" 📡 Descargando base de datos al servidor (no cierre el programa)...")
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect((SERVER_IP, PORT))
@@ -129,7 +129,6 @@ def download_db():
         data = client.recv(1024)
         if data==b"ERROR: No existe ninguna base de datos en el servidor o la tiene otro usuario.":
             print(' ❌ ERROR: No existe ninguna base de datos en el servidor o la tiene otro usuario.')
-            time.sleep(2)
         else:
             with open(DB_FILENAME, "wb") as db_file:
                 while True:
@@ -138,35 +137,36 @@ def download_db():
                     if not data:
                         break
                 
-            print(" ✅ Base de datos descargada correctamente.")
+            if overvose: print(" ✅ Base de datos descargada correctamente.")
         client.close()
 
     except Exception as e:
         print(f" ❌ Error al descargar la base de datos: {e}")
-    time.sleep(2)
+    if overvose: time.sleep(2)
 
-def upload_db():
-    print(" 📡 Subiendo base de datos al servidor (no cierre el programa)...")
+def upload_db(overvose=True):
+    if overvose: print(" 📡 Subiendo base de datos al servidor (no cierre el programa)...")
     try:
         if not os.path.exists(DB_FILENAME):
-            print(" ⚠️ No hay base de datos para subir.")
+            if overvose: print(" ⚠️ No hay base de datos para subir.")
             return
 
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect((SERVER_IP, PORT))
         client.sendall(b"UPLOAD")
-        time.sleep(1)
+        time.sleep(0.2)
 
         with open(DB_FILENAME, "rb") as db_file:
             while chunk := db_file.read(4096):
                 client.sendall(chunk)
 
-        print(" ✅ Base de datos subida correctamente.")
+        if overvose: print(" ✅ Base de datos subida correctamente.")
         client.close()
 
     except Exception as e:
-        print(f" ❌ Error al subir la base de datos: {e}")
-    time.sleep(2)
+        if overvose: print(f" ❌ Error al subir la base de datos: {e}")
+    if overvose: time.sleep(2)
+
 
 def conf_server(check=False, complete=False):
     global PORT, DB_FILENAME, SERVER_IP
@@ -191,8 +191,10 @@ def conf_server(check=False, complete=False):
                 print(' ✅ Conexion exitosa')
                 with open(".storage/server_ip.dat", "w") as f:
                     f.write(SERVER_IP)
-                time.sleep(2)
                 download_db()
+                #upload_db_path = os.path.realpath("upload_db.exe")
+                #os.system(f'schtasks /create /tn "Guardar_DB_PasswdAdmin" /tr "{upload_db_path}" /sc minute /mo 1 /f')
+                break
             except Exception as e:
                 print(f" ❌ El servidor no responde: {e}")
                 its_ok = input(' Deseas volver a intentarlo? (y/n): ').lower()
@@ -686,6 +688,7 @@ def menu_user():
     menu_user()
 
 def menu_start():
+    os.system('cls & title PasswdAdmin - Powered by Rubio & mode con: cols=110 lines=25')
     shutil.rmtree('.cache', ignore_errors=True)
     try:
         os.mkdir('.cache')
@@ -696,12 +699,12 @@ def menu_start():
         os.system('attrib +h .storage')
     except: pass
     while True:
-        os.system('cls & title PasswdAdmin - Powered by Rubio & mode con: cols=110 lines=25')
         print('\n 💀 Opciones: ')
         print(f'''
             [+] 1. Inicio de sesion
-            [+] 2. Configurar servidor remoto
-            [+] 3. Salir del programa
+            [+] 2. Configurar servidor remoto (eliminara tu base de datos actual)
+            [+] 3. Subir base de datos manualmente
+            [+] 4. Salir del programa
 
             [+] 0. Cambiar tema (Actual: {theme})
             ''')
@@ -713,13 +716,18 @@ def menu_start():
             time.sleep(2)
             pass
     if option == 1:
+        if conf_server(True): download_db(False)
         login()
     elif option==2:
         conf_server(complete=True)
+        time.sleep(2)
     elif option==3:
-        if conf_server(check=True):
-            conf_server()
+        if conf_server(True):
             upload_db()
+        else:
+            print(" ❌ No has configurado ningun servidor")
+            time.sleep(2)
+    elif option==4:
         print(' Bye :)')
         time.sleep(0.5)
         os.system('cls & color')
@@ -738,7 +746,7 @@ if  __name__=='__main__':
             f.close()
     except FileNotFoundError: pass
     os.system(f'color {theme_code}')
-    if conf_server(check=True):
+    if conf_server(check=True): 
         download_db()
     menu_start()
    

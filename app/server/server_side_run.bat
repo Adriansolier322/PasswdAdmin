@@ -23,7 +23,7 @@ pause > nul
 exit /b
 
 :start_program
-start /high /min python PasswdAdmin_server.pyw
+start /high /min python PasswdAdmin_server.py
 exit /b
 
 :want_install

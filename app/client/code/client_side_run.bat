@@ -23,8 +23,7 @@ pause > nul
 exit /b
 
 :start_program
-start /high /wait python PasswdAdmin_client.py || (CALL ? 2>NUL)
-start /high /min /b python upload_db.py
+start /high python PasswdAdmin_client.py
 exit /b
 
 

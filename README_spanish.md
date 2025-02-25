@@ -8,7 +8,7 @@ Un simple administrador de contraseñas.
 🇪n [English](README.md)
 - Titulo: `PasswdAdmin`
 - Autor: [@Adriansolier322](https://www.github.com/Adriansolier322)
-- Version: `0.3.2`
+- Version: `0.3.3`
 
 
 ### Instalacion
@@ -25,11 +25,8 @@ Las principales dependencias son python3 y Pycryptodomex, para instalar la ultim
 ## Como ejecutar la app
 
 ### App cliente
-Solo necesitas ejecutar `client_side_run.bat` en un windows
+Solo necesitas ejecutar `client_side_run.bat` en un windows.
 ### App de servidor en windows
-Solo necesitas ejecutar `server_side_run.bat` en un windows
+Solo necesitas ejecutar `server_side_run.bat` en un windows.
 ### App de servidor en linux
-Necesitas tener instalado Python3 y ejecutar el comando:
-```bash
-  python3 PasswdAdmin_server.pyw &
-```
+Solo necesitas ejecutar `server_side_run.sh` en un linux.

@@ -223,7 +223,7 @@ def create_rol():
             print(' ❌ El rol ya existe')
             continue
     print(' Se va a generar una key de encriptacion para el rol, no la pierda')
-    key_directory = askdirectory()
+    key_directory = askdirectory(title="Selecione la carpeta donde se guardaran las keys")
     key_directory = generate_key(key_directory=key_directory, role_name=role_name)
     print(f' Su key se encuentra en: {key_directory}')
     print(" ✅ Rol creado correctamente")

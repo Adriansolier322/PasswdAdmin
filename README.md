@@ -8,7 +8,7 @@ A simple password administrator.
 🇪🇸 [Spanish](README_spanish.md)
 - Title: `PasswdAdmin`
 - Author: [@Adriansolier322](https://www.github.com/Adriansolier322)
-- Version: `0.3.3`
+- Version: `0.3.4`
 
 
 ### Installation

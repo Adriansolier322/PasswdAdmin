@@ -125,7 +125,7 @@ def download_db(overvose=True):
         client.sendall(b"DOWNLOAD")
         data = client.recv(1024)
         if data==b"ERROR: No existe ninguna base de datos en el servidor o la tiene otro usuario.":
-            print(' [X] ERROR: No existe ninguna base de datos en el servidor o la tiene otro usuario.')
+            print(' ❌ ERROR: No existe ninguna base de datos en el servidor o la tiene otro usuario.')
         else:
             with open(DB_FILENAME, "wb") as db_file:
                 while True:
@@ -138,7 +138,7 @@ def download_db(overvose=True):
         client.close()
 
     except Exception as e:
-        print(f" [X] Error al descargar la base de datos: {e}")
+        print(f" ❌ Error al descargar la base de datos: {e}")
     if overvose: time.sleep(2)
 
 #Funcion que sube la base de datos al servidor
@@ -162,7 +162,7 @@ def upload_db(overvose=True):
         client.close()
 
     except Exception as e:
-        if overvose: print(f" [X] Error al subir la base de datos: {e}")
+        if overvose: print(f" ❌ Error al subir la base de datos: {e}")
     if overvose: time.sleep(2)
 
 # Funcion para comprobar y/o configurar un servidor
@@ -190,11 +190,9 @@ def conf_server(check=False, complete=False):
                 with open(".storage/server_ip.dat", "w") as f:
                     f.write(SERVER_IP)
                 download_db()
-                #upload_db_path = os.path.realpath("upload_db.exe")
-                #os.system(f'schtasks /create /tn "Guardar_DB_PasswdAdmin" /tr "{upload_db_path}" /sc minute /mo 1 /f')
                 break
             except Exception as e:
-                print(f" [X] El servidor no responde: {e}")
+                print(f" ❌ El servidor no responde: {e}")
                 its_ok = input(' Deseas volver a intentarlo? (y/n): ').lower()
                 if its_ok == 'y' or its_ok == 's' or its_ok == 'yes' or its_ok == 'si':
                     continue
@@ -206,9 +204,33 @@ def conf_server(check=False, complete=False):
 
 #----------------------------------------------DB----------------------------------------------
 
+def create_rol():
+    db = sqlite3.connect('.storage/users.db')
+    os.system('cls')
+    print(' 🤖 Creacion de roles: \n')
+    role_id = db.execute("select id from users ORDER BY id DESC LIMIT 1").fetchone()
+    role_id = role_id[0] + 1
+    while True:
+        role_name = str(input(' Nombre del rol: '))
+        try:
+            role = db.execute('select * from roles where role_name=?', (role_name,)).fetchone()
+            if role==None:
+                break
+            else:
+                print(' ❌ El rol ya existe')
+                continue
+        except sqlite3.OperationalError:
+            print(' ❌ El rol ya existe')
+            continue
+    print(' Se va a generar una key de encriptacion para el rol, no la pierda')
+    key_directory = askdirectory()
+    key_directory = generate_key(key_directory=key_directory, role_name=role_name)
+    print(f' Su key se encuentra en: {key_directory}')
+    print(" ✅ Rol creado correctamente")
+    time.sleep(2)
 #Funcion para registrar usuarios en la DB, por defecto pedira al usuario su informacion de registro pero tambien tenemos la opcion de registrar usuarios manualmente desde el propio codigo
 def register_user(user_name='', passwd='', priv_key='', autocomplete=True):
-    #try:
+    try:
         if autocomplete:
             db = sqlite3.connect('.storage/users.db')
             os.system('cls')
@@ -236,20 +258,29 @@ def register_user(user_name='', passwd='', priv_key='', autocomplete=True):
                     user_id = db.execute("select id from users ORDER BY id DESC LIMIT 1").fetchone()
                     user_id = user_id[0]
                     user_id+=1
-                    
+                    while True:
+                        role_name = str(input(' Rol a desempeñar: '))
+                        try:
+                            role_id = db.execute('select id from roles where role_name=?', (role_name, )).fetchone()
+                            if role_id==None:
+                                print(' ❌ El rol no existe')
+                            else:
+                                role_id = role_id[0]
+                                break
+                        except sqlite3.OperationalError:
+                            print(' ❌ El rol no existe')
+                            
                 except:
-                    user_id=1
+                    user_id = 1
+                    role_id = 1
                     
+
                 print(' Se va a generar una key de encriptacion para su registro, no la pierda')
                 print(' Su key se encuentra en: ', end='')
                 key_directory = generate_key(user_id=user_id, user_name=user_name)
                 print(key_directory)
                 if user_id==1:
                     generate_key(key_directory=key_directory, role_name='admin')
-                    role=1
-                else:
-                    generate_key(key_directory=key_directory, role_name='ninguno')
-                    role=2
                 break
     
                 
@@ -258,22 +289,18 @@ def register_user(user_name='', passwd='', priv_key='', autocomplete=True):
                 passwd = hash(passwd)
                 priv_key = hash(read_key(path=f'{key_directory}/{user_name}_priv.keypa'), mode='SHA256')
                 # Registra al usuario en la DB
-                db.execute("insert into users(user_name,passwd,priv_key,keys_directory,role) values (?,?,?,?,?)", (user_name,passwd,priv_key,key_directory,role))
+                db.execute("insert into users(user_name,passwd,priv_key,keys_directory,role) values (?,?,?,?,?)", (user_name,passwd,priv_key,key_directory,role_id))
                 db.commit()
                 db.close()
                 print('\n ✅ Usuario registrado correctamente')
-                time.sleep(2)
-            elif its_ok == 'n' or its_ok == 'no' or its_ok == 'nou' or its_ok == '':
-                print(' [X] El registro de usuario no se ha completado')
-                time.sleep(2)
             else: 
-                print(' [X] El registro de usuario no se ha completado')
-                time.sleep(2)
+                print(' ❌ El registro de usuario no se ha completado')
+            time.sleep(2)
 
         
-    #except: 
-    #    print('\n Algo a salido mal al registrar el usuario')
-    #    time.sleep(2)
+    except: 
+        print('\n Algo a salido mal al registrar el usuario')
+        time.sleep(2)
 
 def login(trys=3):
     try:
@@ -291,7 +318,7 @@ def login(trys=3):
             print(' 🎫 Inicio de sesion:')
             print(f' Tienes {trys} intentos antes de que se cierre el programa\n')
             if trys==0:
-                print(' [X] Te has quedado sin intentos :´(')
+                print(' ❌ Te has quedado sin intentos :´(')
                 time.sleep(2)
                 exit()
 
@@ -303,7 +330,7 @@ def login(trys=3):
 
             data = db.execute('select * from users where user_name=? AND passwd=? AND priv_key=?', (user_name, hash(passwd), hash(read_key(path=priv_key), mode='SHA256'))).fetchone()
             if data==None:
-                print(' [X] La informacion proporcionada es incorrecta')
+                print(' ❌ La informacion proporcionada es incorrecta')
                 trys-=1
                 time.sleep(2)
                 login(trys=trys)
@@ -317,15 +344,13 @@ def login(trys=3):
                     shutil.copytree(keys_directory, '.cache/keys')
                 except: pass
                 time.sleep(2)
-                if data[0]==1:
+                if role=='admin':
                     menu_admin()
                 else:
                     menu_user()
-    except sqlite3.OperationalError as e: 
-        print(e)
-        input()
-        #print(' No se ha detectado ningun admisitrador, se registrara usted como admin')
-        #getpass('\n [Presiona ENTER para continuar]')
+    except sqlite3.OperationalError: 
+        print(' No se ha detectado ningun admisitrador, se registrara usted como admin')
+        getpass('\n [Presiona ENTER para continuar]')
         create_DB()
 
 
@@ -359,6 +384,7 @@ def create_DB():
         db.execute("""create table if not exists pub_passwd (
                             desc txt not null,
                             passwd txt not null,
+                            user txt not null,
                             role integer not  null,
                             foreign key (role) references roles (id))""")
         # Tabla keys publicas
@@ -369,7 +395,7 @@ def create_DB():
                             foreign key (id) references users (id))""")
         
     except sqlite3.OperationalError:
-        print(' [X] Ya existe una base de datos')            
+        print(' ❌ Ya existe una base de datos')            
     db.close()
     register_user()
 
@@ -377,7 +403,7 @@ def create_DB():
 #----------------------------------------------PASSWD----------------------------------------------
 # Guarda la contraseña privada en la base de datos, preguntando la descripcion
 def save_passwd(passwd='', is_pub_passwd=False):
-    global role
+    global role, user_name
     db = sqlite3.connect('.storage/users.db')
     os.system('cls')
     print(' 🔑 Guardado de contraseña: ')
@@ -400,13 +426,13 @@ def save_passwd(passwd='', is_pub_passwd=False):
             else:
                 data = data[0]
         if desc=='exit':
-            print(' [X] La descripcion de la contraseña no puede ser "exit"')
+            print(' ❌ La descripcion de la contraseña no puede ser "exit"')
             continue
         elif desc==data:
-            print(' [X] Ya existe una contraseña con esa descripcion, porfavor use otra')
+            print(' ❌ Ya existe una contraseña con esa descripcion, porfavor use otra')
             continue
         elif len(desc)>100:
-            print(' [X] La descripcion no puede tener mas de 100 caracteres') 
+            print(' ❌ La descripcion no puede tener mas de 100 caracteres') 
             continue
         else:
             if passwd=='':
@@ -417,7 +443,7 @@ def save_passwd(passwd='', is_pub_passwd=False):
                     while True:
                         passwd = str(input(' Introduce la contraseña que deseas guardar: '))
                         if len(passwd)>100:
-                            print(' [X] La contraseña no puede tener mas de 100 caracteres')
+                            print(' ❌ La contraseña no puede tener mas de 100 caracteres')
                             continue
                         else: break
             else:
@@ -431,7 +457,7 @@ def save_passwd(passwd='', is_pub_passwd=False):
             its_ok = input('\n Estas seguro de que deseas guardar esta contraseña? (y/n): ').lower()
             if its_ok == 'y' or its_ok == 's' or its_ok == 'yes' or its_ok == 'si':
                 if is_pub_passwd:
-                    db.execute("insert into pub_passwd(desc,passwd,role) values (?,?,?)", (desc, passwd, role_id))
+                    db.execute("insert into pub_passwd(desc,passwd,role,user) values (?,?,?,?)", (desc, passwd, role_id, user_name))
                 else:
                     db.execute("insert into priv_passwd(id,desc,passwd) values (?,?,?)", (user_id, desc, passwd))
                 db.commit()
@@ -440,10 +466,10 @@ def save_passwd(passwd='', is_pub_passwd=False):
                 time.sleep(2)
                 break
             elif its_ok == 'n' or its_ok == 'no' or its_ok == 'nou' or its_ok == '':
-                print(' [X] OK :)')
+                print(' ❌ OK :)')
                 break
             else: 
-                print(' [X] No has introducido una opción valida')
+                print(' ❌ No has introducido una opción valida')
                 continue
 
     
@@ -456,9 +482,9 @@ def view_passwd(delete=False, pub_passwd=False):
     if pub_passwd:
         role_id = db.execute('select role from users where user_name=?', (user_name, )).fetchone()
         role_id = role_id[0]
-        data = db.execute('select desc,passwd from pub_passwd where role=?', (role_id, ))
+        data = db.execute('select desc,passwd,user from pub_passwd where role=?', (role_id, ))
         for fila in data:
-            print(f' Descripcion: {fila[0]} | Contraseña: {descif_txt(fila[1], role)}\n')
+            print(f' Guardada por: {fila[2]} | Descripcion: {fila[0]} | Contraseña: {descif_txt(fila[1], role)}\n')
     else:
         user_id = db.execute('select id from users where user_name=?', (user_name, )).fetchone()
         user_id = user_id[0]
@@ -474,7 +500,7 @@ def view_passwd(delete=False, pub_passwd=False):
                 break
             delete_passwd = db.execute('select desc from priv_passwd where desc=?',  (answer, )).fetchone()
             if delete_passwd==None:
-                print(' [X] La contraseña que buscas no existe')
+                print(' ❌ La contraseña que buscas no existe')
             else:
                 os.system('cls')
                 print(' 🗑️ La contraseña que se va a eliminar es la siguiente: \n')
@@ -490,10 +516,10 @@ def view_passwd(delete=False, pub_passwd=False):
                     time.sleep(2)
                     break
                 elif its_ok == 'n' or its_ok == 'no' or its_ok == 'nou' or its_ok == '':
-                    print(' [X] OK :)')
+                    print(' ❌ OK :)')
                     break
                 else: 
-                    print(' [X] No has introducido una opción valida')
+                    print(' ❌ No has introducido una opción valida')
                     continue
         db.close()
     else:
@@ -533,7 +559,7 @@ def passwd_history():
             data = file.read()
             print(data)
     except FileNotFoundError:
-        print(' [X] No hay ninguna contraseña en el historial\n')
+        print(' ❌ No hay ninguna contraseña en el historial\n')
     getpass('\n [Presiona ENTER para volver]')
     
 #----------------------------------------------MENUS----------------------------------------------
@@ -558,7 +584,7 @@ def change_theme():
             option = int(input(' Que deseas realizar: '))
             break
         except ValueError:
-            print(" [X] Has introducido una opcion invalida")
+            print(" ❌ Has introducido una opcion invalida")
             time.sleep(2)
             pass
     if option == 1:
@@ -582,7 +608,7 @@ def change_theme():
         theme = "hacker WhiteHat"
         theme_code = '7A'
     else: 
-        print(" [X] Has introducido una opcion invalida")
+        print(" ❌ Has introducido una opcion invalida")
         time.sleep(3)
     with open('.storage/theme.dat', 'w') as file:
         file.write(theme_code)
@@ -600,10 +626,11 @@ def menu_admin():
             [+] 3. Borrar una contraseña (privada)
             [+] 4. Consultar contraseñas (privadas)
             [+] 5. Consultar contraseñas (publicas)
-            [+] 6. Registrar un nuevo usuario 
-            [+] 7. Generar una contraseña segura
-            [+] 8. Ver historial de contraseñas generadas
-            [+] 9. Cerrar sesion (Recomendado)
+            [+] 6. Generar una contraseña segura
+            [+] 7. Ver historial de contraseñas generadas
+            [+] 8. Registrar un nuevo usuario
+            [+] 9. Crear un nuevo rol
+            [+] 10. Cerrar sesion (Recomendado)
 
             [+] 0. Cambiar tema (Actual: {theme})
             ''')
@@ -624,9 +651,7 @@ def menu_admin():
         view_passwd()
     elif option==5:
         view_passwd(pub_passwd=True)
-    elif option==6:
-        register_user()
-    elif option==7:       # Generar una contraseña
+    elif option==6: # Generar una contraseña
         try:
             long = int(input(' Longitud de la contraseña a generar: '))
             if long>50:
@@ -635,12 +660,16 @@ def menu_admin():
             else:
                 random_passwd(long, save=True)
         except:
-            print(' [X] No ha introducido un numero valido, se generara una por defecto de 20 caracteres')
+            print(' ❌ No ha introducido un numero valido, se generara una por defecto de 20 caracteres')
             time.sleep(2)
             random_passwd(save=True)
-    elif option==8:
+    elif option==7:       
         passwd_history()
+    elif option==8:
+        register_user()
     elif option==9:
+        create_rol()
+    elif option==10:
         if conf_server(check=True):
             conf_server()
             upload_db()
@@ -648,7 +677,7 @@ def menu_admin():
     elif option==0:
         change_theme()
     else: 
-        print(" [X] Has introducido una opcion invalida")
+        print(" ❌ Has introducido una opcion invalida")
         time.sleep(3)
     menu_admin()
 
@@ -674,7 +703,7 @@ def menu_user():
             option = int(input(' Que deseas realizar: '))
             break
         except ValueError: 
-            print(" [X] Has introducido una opcion invalida")
+            print(" ❌ Has introducido una opcion invalida")
             time.sleep(2)
             pass
     if option == 1:
@@ -692,7 +721,7 @@ def menu_user():
             long = int(input(' Longitud de la contraseña a generar: '))
             random_passwd(long, save=True)
         except:
-            print(' [X] No ha introducido un numero valido, se generara una por defecto de 20 caracteres')
+            print(' ❌ No ha introducido un numero valido, se generara una por defecto de 20 caracteres')
             time.sleep(2)
             random_passwd(save=True)
     elif option==7:
@@ -705,7 +734,7 @@ def menu_user():
     elif option==0:
         change_theme()
     else: 
-        print(" [X] Has introducido una opcion invalida")
+        print(" ❌ Has introducido una opcion invalida")
         time.sleep(3)
     menu_user()
 
@@ -734,7 +763,7 @@ def menu_start():
             option = int(input(' Que deseas realizar: '))
             break
         except ValueError:
-            print(" [X] Has introducido una opcion invalida")
+            print(" ❌ Has introducido una opcion invalida")
             time.sleep(2)
             pass
     if option == 1:
@@ -747,7 +776,7 @@ def menu_start():
         if conf_server(True):
             upload_db()
         else:
-            print(" [X] No has configurado ningun servidor")
+            print(" ❌ No has configurado ningun servidor")
             time.sleep(2)
     elif option==4:
         print(' Bye :)')
@@ -757,7 +786,7 @@ def menu_start():
     elif option==0:
         change_theme()
     else: 
-        print(" [X] Has introducido una opcion invalida")
+        print(" ❌ Has introducido una opcion invalida")
         time.sleep(3)
     menu_start()
 

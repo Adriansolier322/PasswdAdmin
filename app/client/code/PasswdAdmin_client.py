@@ -73,8 +73,8 @@ def descif_txt(txt_cif, name=''):
     txt_descif = cipher.decrypt(txt_cif)
     return txt_descif.decode('utf-8')
 
-def search_keys():
-    os.system('dir /b/s *.keypa > .cache/found_keys')
+#def search_keys():
+#    os.system('dir /b/s *.keypa > .cache/found_keys')
 
 #----------------------------------------------Others----------------------------------------------
 
@@ -179,7 +179,7 @@ def conf_server(check=False, complete=False):
     if check: return Pass
     if complete:
         while True:
-            os.system('cls')
+            os.system(clear)
             print(' 🛜 Configuracion de servidor remoto:\n')
             SERVER_IP = str(input(' Introduzca la ip o direccion del servidor remoto: '))
 
@@ -206,7 +206,7 @@ def conf_server(check=False, complete=False):
 
 def create_rol():
     db = sqlite3.connect('.storage/users.db')
-    os.system('cls')
+    os.system(clear)
     print(' 🤖 Creacion de roles: \n')
     role_id = db.execute("select id from users ORDER BY id DESC LIMIT 1").fetchone()
     role_id = role_id[0] + 1
@@ -233,7 +233,7 @@ def register_user(user_name='', passwd='', priv_key='', autocomplete=True):
     try:
         if autocomplete:
             db = sqlite3.connect('.storage/users.db')
-            os.system('cls')
+            os.system(clear)
             print(' 👤 Registro de usuario: \n')
             #Pide los datos al usuario
             while True:
@@ -314,7 +314,7 @@ def login(trys=3):
                 menu_start()
         else:
             global user_name, priv_key, role
-            os.system('cls')
+            os.system(clear)
             print(' 🎫 Inicio de sesion:')
             print(f' Tienes {trys} intentos antes de que se cierre el programa\n')
             if trys==0:
@@ -324,8 +324,9 @@ def login(trys=3):
 
             user_name = str(input(' Nombre de usuario: '))
             passwd = str(getpass(' Contraseña: '))
-            print(f' Seleccione su key de encriptación: ', end='')
-            priv_key = askopenfilename(title='Seleccione su key de encriptación')
+            print(f' Seleccione la carpeta donde se encuentran las keys de encriptación: ', end='')
+            keys_directory = askdirectory(title='Seleccione la carpeta donde se encuentran las keys')
+            priv_key = f'{keys_directory}/{user_name}_priv.keypa'
             print(priv_key)
 
             data = db.execute('select * from users where user_name=? AND passwd=? AND priv_key=?', (user_name, hash(passwd), hash(read_key(path=priv_key), mode='SHA256'))).fetchone()
@@ -340,7 +341,6 @@ def login(trys=3):
                 role = db.execute('select role_name from roles where id=?', (role_id, )).fetchone()
                 role = role[0]
                 try:
-                    keys_directory = data[4]
                     shutil.copytree(keys_directory, '.cache/keys')
                 except: pass
                 time.sleep(2)
@@ -405,7 +405,7 @@ def create_DB():
 def save_passwd(passwd='', is_pub_passwd=False):
     global role, user_name
     db = sqlite3.connect('.storage/users.db')
-    os.system('cls')
+    os.system(clear)
     print(' 🔑 Guardado de contraseña: ')
     user_id = db.execute('select id from users where user_name=?', (user_name, )).fetchone()
     user_id = user_id[0]
@@ -477,7 +477,7 @@ def save_passwd(passwd='', is_pub_passwd=False):
 def view_passwd(delete=False, pub_passwd=False):
     global user_name, role
     db = sqlite3.connect('.storage/users.db')
-    os.system('cls')
+    os.system(clear)
     print(' 📋 Tus contraseñas almacenadas son: \n')
     if pub_passwd:
         role_id = db.execute('select role from users where user_name=?', (user_name, )).fetchone()
@@ -502,7 +502,7 @@ def view_passwd(delete=False, pub_passwd=False):
             if delete_passwd==None:
                 print(' ❌ La contraseña que buscas no existe')
             else:
-                os.system('cls')
+                os.system(clear)
                 print(' 🗑️ La contraseña que se va a eliminar es la siguiente: \n')
                 
                 delete_passwd = db.execute('select desc,passwd from priv_passwd where desc=?', (answer, )).fetchone()
@@ -552,7 +552,7 @@ def random_passwd(long=20, save=False):
 
 # Funcion para visualizar las contraseñas generadas anteriormente
 def passwd_history():
-    os.system('cls')
+    os.system(clear)
     print(' 📋 Contraseñas generadas anteriormente:\n')
     try:
         with open('.cache/passwd_history', 'r') as file:
@@ -571,7 +571,7 @@ def change_theme():
     global theme
     global theme_code
     while True:
-        os.system('cls')
+        os.system(clear)
         print('\n 🎨 Seleccion de tema: ')
         print(f'''
             [+] 1. Tema Claro
@@ -617,7 +617,7 @@ def change_theme():
 def menu_admin():
     global user_name, priv_key, role
     while True:
-        os.system('cls')
+        os.system(clear)
         print(f' 👤 Usuario: {user_name} | Rol: {role}                    📰 Sesion: {datetime.date.today()}\n')
         print(' Opciones: ')
         print(f'''
@@ -684,7 +684,7 @@ def menu_admin():
 def menu_user():
     global user_name, priv_key, role
     while True:
-        os.system('cls')
+        os.system(clear)
         print(f' 👤 Usuario: {user_name} | Rol: {role}                        📰 Sesion: {datetime.date.today()}\n')
         print(' Opciones: ')
         print(f'''
@@ -739,7 +739,7 @@ def menu_user():
     menu_user()
 
 def menu_start():
-    os.system('cls & title PasswdAdmin - Powered by Rubio & mode con: cols=110 lines=25')
+    os.system('clear & title PasswdAdmin - Powered by Rubio & mode con: cols=110 lines=25')
     shutil.rmtree('.cache', ignore_errors=True)
     try:
         os.mkdir('.cache')
@@ -781,7 +781,7 @@ def menu_start():
     elif option==4:
         print(' Bye :)')
         time.sleep(0.5)
-        os.system('cls & color')
+        os.system(clear)
         exit()
     elif option==0:
         change_theme()
@@ -791,6 +791,10 @@ def menu_start():
     menu_start()
 
 if  __name__=='__main__':
+    if os.name == "nt":
+        clear = "cls"
+    else: 
+        clear = "clear"
     try:
         with open('.storage/theme.dat', 'r') as f:
             theme_code = f.read()

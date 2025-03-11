@@ -24,9 +24,10 @@ Las principales dependencias son python3 y Pycryptodomex, para instalar la ultim
 ```
 ## Como ejecutar la app
 
-### App cliente
-Solo necesitas ejecutar `client_side_run.bat` en un windows.
-### App de servidor en windows
-Solo necesitas ejecutar `server_side_run.bat` en un windows.
-### App de servidor en linux
-Solo necesitas ejecutar `server_side_run.sh` en un linux.
+### Cliente
+* **Windows:** Ejecute `PasswdAdmin_client.exe`
+* **Linux:** Ejecute `client_side_run.sh`
+
+### Servidor
+* **Windows:** Ejecute `server_side_run.bat`
+* **Linux:** Ejecute `server_side_run.sh`

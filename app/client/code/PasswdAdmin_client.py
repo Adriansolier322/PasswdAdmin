@@ -12,7 +12,7 @@ import socket
 
 #GUI
 import tkinter as tk
-from tkinter.filedialog import askopenfilename, askdirectory
+from tkinter.filedialog import askdirectory
 tk.Tk().withdraw()
 
 #Others
@@ -739,15 +739,16 @@ def menu_user():
     menu_user()
 
 def menu_start():
-    os.system('clear & title PasswdAdmin - Powered by Rubio & mode con: cols=110 lines=25')
+    os.system(clear)
     shutil.rmtree('.cache', ignore_errors=True)
     try:
         os.mkdir('.cache')
         os.mkdir('.storage')
     except FileExistsError: pass
     try:
-        os.system('attrib +h .cache')
-        os.system('attrib +h .storage')
+        if os.name == "nt":
+            os.system('attrib +h .cache')
+            os.system('attrib +h .storage')
     except: pass
     while True:
         print('\n 💀 Opciones: ')
@@ -793,6 +794,7 @@ def menu_start():
 if  __name__=='__main__':
     if os.name == "nt":
         clear = "cls"
+        os.system('title PasswdAdmin - Powered by Rubio & mode con: cols=110 lines=25')
     else: 
         clear = "clear"
     try:
